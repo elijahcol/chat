@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const USERS_FILE = path.join(__dirname, 'users.json');
 
-// ---- Simple account store (username -> {salt, hash}) ----
+// ---- Simple account store (username -> {salt, hash, profilePicture}) ----
 function loadUsers() {
   try {
     return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
@@ -32,10 +32,14 @@ function saveUsers(users) {
 function hashPassword(password, salt) {
   return crypto.scryptSync(password, salt, 64).toString('hex');
 }
-function createUser(username, password) {
+function createUser(username, password, profilePicture) {
   const users = loadUsers();
   const salt = crypto.randomBytes(16).toString('hex');
-  users[username] = { salt, hash: hashPassword(password, salt) };
+  users[username] = { 
+    salt, 
+    hash: hashPassword(password, salt),
+    profilePicture: profilePicture || null
+  };
   saveUsers(users);
 }
 function verifyUser(username, password) {
@@ -59,7 +63,7 @@ function readJsonBody(req) {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 1e5) req.destroy();
+      if (body.length > 5e6) req.destroy(); // increased to 5MB for base64 images
     });
     req.on('end', () => {
       try {
@@ -92,7 +96,7 @@ const server = http.createServer(async (req, res) => {
   // ---- API routes ----
   if (req.method === 'POST' && req.url === '/api/register') {
     try {
-      const { username, password, inviteCode } = await readJsonBody(req);
+      const { username, password, inviteCode, profilePicture } = await readJsonBody(req);
       if ((inviteCode || '').toString() !== INVITE_CODE) {
         return sendJson(res, 403, { error: 'Wrong invite code' });
       }
@@ -107,7 +111,7 @@ const server = http.createServer(async (req, res) => {
       if (users[name]) {
         return sendJson(res, 409, { error: 'That username is already taken' });
       }
-      createUser(name, password);
+      createUser(name, password, profilePicture || null);
       const token = createToken(name);
       return sendJson(res, 200, { token, username: name });
     } catch (e) {
@@ -206,6 +210,17 @@ function userList() {
   return Array.from(clients.values()).map((c) => c.username);
 }
 
+function getProfiles() {
+  const users = loadUsers();
+  const profiles = {};
+  for (const [username, user] of Object.entries(users)) {
+    if (user.profilePicture) {
+      profiles[username] = { picture: user.profilePicture };
+    }
+  }
+  return profiles;
+}
+
 function pushHistory(msg) {
   history.push(msg);
   if (history.length > HISTORY_LIMIT) history.shift();
@@ -233,13 +248,22 @@ wss.on('connection', (ws) => {
       // If this user is already connected elsewhere, that's fine — just track this socket too
       clients.set(ws, { username });
 
-      // send history + user list to the new client
-      ws.send(JSON.stringify({ type: 'welcome', username, history, users: userList(), dms: dmsForUser(username) }));
+      // send history + user list + profiles to the new client
+      const users = loadUsers();
+      ws.send(JSON.stringify({ 
+        type: 'welcome', 
+        username, 
+        history, 
+        users: userList(), 
+        dms: dmsForUser(username),
+        profiles: getProfiles(),
+        myProfile: users[username] ? { picture: users[username].profilePicture } : {}
+      }));
 
       const joinMsg = { type: 'system', text: `${username} joined the chat`, ts: Date.now() };
       pushHistory(joinMsg);
       broadcast(joinMsg);
-      broadcast({ type: 'users', users: userList() });
+      broadcast({ type: 'users', users: userList(), profiles: getProfiles() });
       return;
     }
 
@@ -283,7 +307,7 @@ wss.on('connection', (ws) => {
       const leaveMsg = { type: 'system', text: `${client.username} left the chat`, ts: Date.now() };
       pushHistory(leaveMsg);
       broadcast(leaveMsg);
-      broadcast({ type: 'users', users: userList() });
+      broadcast({ type: 'users', users: userList(), profiles: getProfiles() });
     }
   });
 });
