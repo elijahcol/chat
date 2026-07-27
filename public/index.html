@@ -450,6 +450,7 @@
 
   #input-bar {
     display: flex;
+    flex-direction: column;
     gap: 0.8rem;
     padding: 1.2rem;
     border-top: 1px solid var(--border);
@@ -490,6 +491,7 @@
     font-weight: 600;
     transition: all 0.3s;
     box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+    align-self: flex-end;
   }
 
   #send-btn:hover {
@@ -501,6 +503,12 @@
     transform: translateY(0);
   }
 
+  #send-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
   #conn-status {
     font-size: 0.8rem;
     color: var(--muted);
@@ -508,6 +516,17 @@
     transition: color 0.3s;
     margin-left: 0.8rem;
     opacity: 0.8;
+  }
+
+  #filter-warning {
+    background: rgba(251, 146, 60, 0.2);
+    border: 1px solid rgba(251, 146, 60, 0.4);
+    color: #fed7aa;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    display: none;
+    backdrop-filter: blur(10px);
   }
 </style>
 </head>
@@ -549,8 +568,11 @@
       <div id="chat-header"><span id="chat-header-title">Chat</span> <span id="conn-status"></span></div>
       <div id="messages"></div>
       <div id="input-bar">
-        <input id="msg-input" placeholder="Type a message…" autocomplete="off" />
-        <button id="send-btn">Send</button>
+        <div id="filter-warning"></div>
+        <div style="display: flex; gap: 0.8rem;">
+          <input id="msg-input" placeholder="Type a message…" autocomplete="off" />
+          <button id="send-btn">Send</button>
+        </div>
       </div>
     </div>
   </div>
@@ -576,6 +598,30 @@
   const logoutBtn = document.getElementById('logout-btn');
   const themeToggleBtn = document.getElementById('theme-toggle-btn');
   const connStatus = document.getElementById('conn-status');
+  const filterWarning = document.getElementById('filter-warning');
+
+  // ---- Language Filter ----
+  const BANNED_WORDS = [
+    'shit', 'ass', 'damn', 'crap', 'piss', 'hell', 'fuck',
+    'cracker', 'chinaman', 'retard', 'stupid', 'idiot', 'moron', 'dumb'
+  ];
+
+  const bannedRegex = new RegExp(
+    '\\b(' + BANNED_WORDS.join('|') + ')\\b',
+    'gi'
+  );
+
+  function containsBannedContent(text) {
+    return bannedRegex.test(text);
+  }
+
+  function showFilterWarning(message) {
+    filterWarning.textContent = message;
+    filterWarning.style.display = 'block';
+    setTimeout(() => {
+      filterWarning.style.display = 'none';
+    }, 4000);
+  }
 
   let mode = 'login'; // or 'register'
   let ws = null;
@@ -797,6 +843,13 @@
   function sendMessage() {
     const text = msgInput.value;
     if (!text.trim() || !ws || ws.readyState !== WebSocket.OPEN) return;
+    
+    // Check for banned content
+    if (containsBannedContent(text)) {
+      showFilterWarning('⚠️ Your message contains inappropriate language. Please remove it and try again.');
+      return;
+    }
+
     if (currentConversation === 'public') {
       ws.send(JSON.stringify({ type: 'message', text }));
     } else {
