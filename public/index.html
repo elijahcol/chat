@@ -600,20 +600,62 @@
   const connStatus = document.getElementById('conn-status');
   const filterWarning = document.getElementById('filter-warning');
 
-  // ---- Language Filter ----
+  // ---- Comprehensive Language Filter ----
   const BANNED_WORDS = [
-    'shit', 'ass', 'damn', 'crap', 'piss', 'hell', 'fuck',
-    'cracker', 'chinaman', 'retard', 'stupid', 'idiot', 'moron', 'dumb',
-    'nigga', 'nigger'
+    // Explicit swear words
+    'shit', 'asshole', 'ass', 'damn', 'crap', 'piss', 'hell', 'fuck', 'fucked', 'fucking', 'fucker',
+    'bitch', 'bastard', 'cock', 'dick', 'pussy', 'tit', 'tits', 'wank', 'twat', 'arse',
+    // Slurs and derogatory terms
+    'nigga', 'nigger', 'cracker', 'chinaman', 'retard', 'faggot', 'fag', 'dyke', 'tranny',
+    'spic', 'wetback', 'kike', 'paki', 'towelhead', 'chink', 'gook',
+    // Hateful/insulting
+    'stupid', 'idiot', 'moron', 'dumb', 'retarded', 'imbecile', 'douche', 'douchebag',
+    'cunt', 'whore', 'slut', 'ho', 'skank', 'hoe'
   ];
 
-  const bannedRegex = new RegExp(
-    '\\b(' + BANNED_WORDS.join('|') + ')\\b',
-    'gi'
-  );
+  // Phonetic/wordplay dangerous patterns
+  const WORDPLAY_PATTERNS = [
+    /d[i!1]?x[i!1]?on/i,           // dixion -> dixie on
+    /m[y1]?a[z2s5]/i,              // myaz -> my ass
+    /s[3e]x/i,                      // s3x, sex
+    /p[0o]rn/i,                     // p0rn, porn
+    /c[0o]ck/i,                     // c0ck, cock
+    /d[i!1]ck/i,                    // d1ck, dick
+    /p[u]5[5s]y/i,                  // pu55y, pussy
+    /[a4]55/i,                      // a55 -> ass
+    /b[i!1]tch/i,                   // b1tch, bitch
+    /wh[0o]re/i,                    // wh0re, whore
+    /sl[u]t/i,                      // sl0t, slut
+  ];
+
+  // Create obfuscation-resistant regex (handles leetspeak, numbers replacing letters)
+  function createFlexibleRegex(words) {
+    const wordPatterns = words.map(word => {
+      // Replace letters with flexible patterns to catch leetspeak
+      return word
+        .replace(/a/gi, '[a4@]')
+        .replace(/e/gi, '[e3]')
+        .replace(/i/gi, '[i1!]')
+        .replace(/o/gi, '[o0]')
+        .replace(/s/gi, '[s5$]')
+        .replace(/l/gi, '[l1]')
+        .replace(/t/gi, '[t7]')
+        .replace(/z/gi, '[z2]');
+    });
+    return new RegExp('\\b(' + wordPatterns.join('|') + ')\\b', 'gi');
+  }
+
+  const bannedRegex = createFlexibleRegex(BANNED_WORDS);
 
   function containsBannedContent(text) {
-    return bannedRegex.test(text);
+    // Check direct banned words with obfuscation
+    if (bannedRegex.test(text)) return true;
+    
+    // Check wordplay patterns
+    for (let pattern of WORDPLAY_PATTERNS) {
+      if (pattern.test(text)) return true;
+    }
+    return false;
   }
 
   function showFilterWarning(message) {
@@ -677,6 +719,14 @@
     authError.style.display = 'none';
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
+    
+    // Check username for banned content
+    if (containsBannedContent(username)) {
+      authError.textContent = 'Username contains inappropriate language. Please choose another.';
+      authError.style.display = 'block';
+      return;
+    }
+    
     const endpoint = mode === 'login' ? '/api/login' : '/api/register';
     const body = { username, password };
     if (mode === 'register') {
