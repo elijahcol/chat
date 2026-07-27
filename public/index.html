@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LAN Chat</title>
+<title>Chat</title>
 <style>
   :root {
     --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -546,7 +546,7 @@
       <button id="logout-btn">Log out</button>
     </div>
     <div id="chat-main">
-      <div id="chat-header"><span id="chat-header-title">LAN Chat</span> <span id="conn-status"></span></div>
+      <div id="chat-header"><span id="chat-header-title">Chat</span> <span id="conn-status"></span></div>
       <div id="messages"></div>
       <div id="input-bar">
         <input id="msg-input" placeholder="Type a message…" autocomplete="off" />
@@ -748,7 +748,7 @@
     currentConversation = key;
     unread[key] = 0;
     document.getElementById('public-nav').classList.toggle('active', key === 'public');
-    document.getElementById('chat-header-title').textContent = key === 'public' ? 'LAN Chat' : ('💬 ' + key);
+    document.getElementById('chat-header-title').textContent = key === 'public' ? 'Chat' : ('💬 ' + key);
     renderMessagesFor(key);
     renderSidebar();
     scrollToBottom();
