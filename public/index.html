@@ -109,6 +109,38 @@
     margin-bottom: 1rem;
     display: none;
   }
+  
+  /* Profile picture upload */
+  #profile-picture-field {
+    display: none;
+    margin-bottom: 1rem;
+  }
+  #profile-picture-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--border);
+    margin-bottom: 0.5rem;
+    object-fit: cover;
+    border: 2px solid var(--border);
+  }
+  #profile-picture-input {
+    display: none;
+  }
+  #upload-picture-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    transition: background-color 0.3s;
+  }
+  #upload-picture-btn:hover { background: #f1f1f4; }
+  :root.dark #upload-picture-btn:hover { background: #3a3a3a; }
 
   /* ---- Chat screen ---- */
   #chat-screen {
@@ -157,13 +189,21 @@
     font-size: 0.9rem;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.5rem;
     cursor: pointer;
     position: relative;
     transition: background-color 0.2s;
   }
   #user-list li:hover, #user-list li.active { background: #eceef3; }
   :root.dark #user-list li:hover, :root.dark #user-list li.active { background: #3a3a3a; }
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--border);
+    object-fit: cover;
+    flex-shrink: 0;
+  }
   #user-list li::before {
     content: "";
     width: 8px;
@@ -229,10 +269,19 @@
     flex-direction: column;
     gap: 0.6rem;
   }
-  .msg-row { display: flex; flex-direction: column; max-width: 75%; }
+  .msg-row { display: flex; flex-direction: column; max-width: 75%; gap: 0.3rem; }
   .msg-row.me { align-self: flex-end; align-items: flex-end; }
   .msg-row.other { align-self: flex-start; align-items: flex-start; }
-  .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; transition: color 0.3s; }
+  .msg-header { display: flex; align-items: center; gap: 0.4rem; }
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--border);
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .msg-meta { font-size: 0.75rem; color: var(--muted); transition: color 0.3s; }
   .msg-bubble {
     padding: 0.55rem 0.85rem;
     border-radius: 14px;
@@ -300,6 +349,12 @@
       <input id="username" autocomplete="username" required maxlength="24" />
       <label for="password">Password</label>
       <input id="password" type="password" autocomplete="current-password" required minlength="4" />
+      <div id="profile-picture-field" style="display:none;">
+        <label>Profile Picture</label>
+        <img id="profile-picture-preview" style="display:none;" />
+        <button type="button" id="upload-picture-btn">Choose Picture</button>
+        <input id="profile-picture-input" type="file" accept="image/*" />
+      </div>
       <div id="invite-field" style="display:none;">
         <label for="invite-code">Invite code</label>
         <input id="invite-code" autocomplete="off" />
@@ -346,6 +401,10 @@
   const passwordInput = document.getElementById('password');
   const inviteField = document.getElementById('invite-field');
   const inviteCodeInput = document.getElementById('invite-code');
+  const profilePictureField = document.getElementById('profile-picture-field');
+  const profilePicturePreview = document.getElementById('profile-picture-preview');
+  const profilePictureInput = document.getElementById('profile-picture-input');
+  const uploadPictureBtn = document.getElementById('upload-picture-btn');
   const messagesEl = document.getElementById('messages');
   const userListEl = document.getElementById('user-list');
   const msgInput = document.getElementById('msg-input');
@@ -357,7 +416,10 @@
   let mode = 'login'; // or 'register'
   let ws = null;
   let myUsername = null;
+  let myProfilePicture = null;
+  let profilePictureData = null; // Base64 image data for registration
   let darkMode = localStorage.getItem('lanchat_darkmode') === 'true';
+  let userProfiles = {}; // username -> { picture: base64 }
 
   // Initialize theme
   function applyTheme() {
@@ -376,9 +438,32 @@
     applyTheme();
   });
 
+  uploadPictureBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    profilePictureInput.click();
+  });
+
+  profilePictureInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === 'string') {
+        profilePictureData = result;
+        profilePicturePreview.src = result;
+        profilePicturePreview.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
   function setMode(next) {
     mode = next;
     authError.style.display = 'none';
+    profilePictureData = null;
+    profilePicturePreview.style.display = 'none';
     if (mode === 'login') {
       authTitle.textContent = 'Welcome back';
       authSub.textContent = 'Log in to join the chat';
@@ -386,6 +471,7 @@
       authSwitch.textContent = 'Create one';
       document.getElementById('auth-toggle').firstChild.textContent = "Don't have an account? ";
       passwordInput.autocomplete = 'current-password';
+      profilePictureField.style.display = 'none';
       inviteField.style.display = 'none';
       inviteCodeInput.required = false;
     } else {
@@ -395,6 +481,7 @@
       authSwitch.textContent = 'Log in';
       document.getElementById('auth-toggle').firstChild.textContent = 'Already have an account? ';
       passwordInput.autocomplete = 'new-password';
+      profilePictureField.style.display = 'block';
       inviteField.style.display = 'block';
       inviteCodeInput.required = true;
     }
@@ -409,7 +496,12 @@
     const password = passwordInput.value;
     const endpoint = mode === 'login' ? '/api/login' : '/api/register';
     const body = { username, password };
-    if (mode === 'register') body.inviteCode = inviteCodeInput.value;
+    if (mode === 'register') {
+      body.inviteCode = inviteCodeInput.value;
+      if (profilePictureData) {
+        body.profilePicture = profilePictureData;
+      }
+    }
 
     try {
       const res = await fetch(endpoint, {
@@ -448,15 +540,13 @@
   });
 
   // ---- Conversation state ----
-  // conversations.public = [msgs...]; conversations[otherUsername] = [dm msgs...]
   let conversations = { public: [] };
-  let currentConversation = 'public'; // 'public' or a username
+  let currentConversation = 'public';
   let onlineUsers = [];
-  let knownDmPartners = new Set(); // usernames we have any DM history with
-  let unread = {}; // conversation key -> count
+  let knownDmPartners = new Set();
+  let unread = {};
 
   function conversationKey(msg) {
-    // for private messages, the "other person" from my perspective
     if (msg.type !== 'private') return 'public';
     return msg.from === myUsername ? msg.to : msg.from;
   }
@@ -482,16 +572,30 @@
     const row = document.createElement('div');
     row.className = 'msg-row ' + (senderName === myUsername ? 'me' : 'other');
 
+    const header = document.createElement('div');
+    header.className = 'msg-header';
+
+    if (senderName !== myUsername) {
+      const avatar = document.createElement('img');
+      avatar.className = 'msg-avatar';
+      avatar.alt = senderName;
+      if (userProfiles[senderName]?.picture) {
+        avatar.src = userProfiles[senderName].picture;
+      }
+      header.appendChild(avatar);
+    }
+
     const meta = document.createElement('div');
     meta.className = 'msg-meta';
     const time = new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     meta.textContent = (senderName === myUsername ? 'You' : senderName) + ' · ' + time;
+    header.appendChild(meta);
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     bubble.textContent = msg.text;
 
-    row.appendChild(meta);
+    row.appendChild(header);
     row.appendChild(bubble);
     messagesEl.appendChild(row);
   }
@@ -529,13 +633,24 @@
 
   function renderSidebar() {
     userListEl.innerHTML = '';
-    // combine currently-online users and anyone we've DMed before (in case they went offline)
     const allNames = new Set([...onlineUsers, ...knownDmPartners]);
     allNames.forEach((u) => {
       if (u === myUsername) return;
       const li = document.createElement('li');
       li.className = onlineUsers.includes(u) ? '' : 'offline';
       if (u === currentConversation) li.classList.add('active');
+
+      const dot = document.createElement('span');
+      dot.style.display = 'inline-block';
+      li.appendChild(dot);
+
+      if (userProfiles[u]?.picture) {
+        const avatar = document.createElement('img');
+        avatar.className = 'user-avatar';
+        avatar.alt = u;
+        avatar.src = userProfiles[u].picture;
+        li.appendChild(avatar);
+      }
 
       const label = document.createElement('span');
       label.textContent = u;
@@ -605,6 +720,10 @@
           conversations[other] = msgs;
         });
         onlineUsers = data.users || [];
+        userProfiles = data.profiles || {};
+        if (data.myProfile?.picture) {
+          myProfilePicture = data.myProfile.picture;
+        }
         switchConversation('public');
         return;
       }
@@ -616,6 +735,7 @@
 
       if (data.type === 'users') {
         onlineUsers = data.users || [];
+        userProfiles = data.profiles || {};
         renderSidebar();
         return;
       }
