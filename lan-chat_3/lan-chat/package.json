@@ -1,0 +1,19 @@
+{
+  "name": "lan-chat",
+  "version": "1.0.0",
+  "description": "Simple self-hosted chat app with accounts and DMs",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.21.1"
+  }
+}
