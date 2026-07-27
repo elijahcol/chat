@@ -15,7 +15,22 @@
     --bubble-me: #4f46e5;
     --bubble-other: #eceef3;
     --border: #e2e4ea;
+    --sidebar-bg: #fafafc;
   }
+  
+  :root.dark {
+    --bg: #1a1a1a;
+    --panel: #2a2a2a;
+    --accent: #6366f1;
+    --accent-dark: #4f46e5;
+    --text: #e8e8e8;
+    --muted: #a0a0a0;
+    --bubble-me: #6366f1;
+    --bubble-other: #3a3a3a;
+    --border: #404040;
+    --sidebar-bg: #252525;
+  }
+  
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -26,6 +41,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background-color 0.3s, color 0.3s;
   }
 
   /* ---- Auth screen ---- */
@@ -36,6 +52,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     width: 100%;
     max-width: 380px;
+    transition: background-color 0.3s;
   }
   #auth-screen h1 {
     margin: 0 0 0.25rem;
@@ -59,6 +76,9 @@
     border-radius: 8px;
     margin-bottom: 1rem;
     font-size: 1rem;
+    background: var(--panel);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
   }
   #auth-screen button {
     width: 100%;
@@ -70,6 +90,7 @@
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.3s;
   }
   #auth-screen button:hover { background: var(--accent-dark); }
   #auth-toggle {
@@ -100,14 +121,16 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     overflow: hidden;
     flex-direction: row;
+    transition: background-color 0.3s;
   }
   #sidebar {
     width: 200px;
-    background: #fafafc;
+    background: var(--sidebar-bg);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    transition: background-color 0.3s, border-color 0.3s;
   }
   #sidebar h2 {
     font-size: 0.8rem;
@@ -123,8 +146,10 @@
     font-size: 0.9rem;
     cursor: pointer;
     font-weight: 600;
+    transition: background-color 0.2s;
   }
   #nav-list li:hover, #nav-list li.active { background: #eceef3; }
+  :root.dark #nav-list li:hover, :root.dark #nav-list li.active { background: #3a3a3a; }
   #user-list { list-style: none; padding: 0; margin: 0; flex: 1; overflow-y: auto; }
   #user-list li {
     padding: 0.4rem 0.5rem;
@@ -135,8 +160,10 @@
     gap: 0.4rem;
     cursor: pointer;
     position: relative;
+    transition: background-color 0.2s;
   }
   #user-list li:hover, #user-list li.active { background: #eceef3; }
+  :root.dark #user-list li:hover, :root.dark #user-list li.active { background: #3a3a3a; }
   #user-list li::before {
     content: "";
     width: 8px;
@@ -156,6 +183,19 @@
     padding: 0.05rem 0.4rem;
     border-radius: 10px;
   }
+  #theme-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    padding: 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+  }
+  #theme-toggle-btn:hover { background: #f1f1f4; }
+  :root.dark #theme-toggle-btn:hover { background: #3a3a3a; }
   #logout-btn {
     background: none;
     border: 1px solid var(--border);
@@ -164,8 +204,10 @@
     cursor: pointer;
     color: var(--muted);
     font-size: 0.85rem;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
   }
   #logout-btn:hover { background: #f1f1f4; }
+  :root.dark #logout-btn:hover { background: #3a3a3a; }
 
   #chat-main {
     flex: 1;
@@ -177,6 +219,7 @@
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border);
     font-weight: 600;
+    transition: border-color 0.3s;
   }
   #messages {
     flex: 1;
@@ -189,7 +232,7 @@
   .msg-row { display: flex; flex-direction: column; max-width: 75%; }
   .msg-row.me { align-self: flex-end; align-items: flex-end; }
   .msg-row.other { align-self: flex-start; align-items: flex-start; }
-  .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; transition: color 0.3s; }
   .msg-bubble {
     padding: 0.55rem 0.85rem;
     border-radius: 14px;
@@ -197,6 +240,7 @@
     line-height: 1.4;
     word-wrap: break-word;
     white-space: pre-wrap;
+    transition: background-color 0.3s, color 0.3s;
   }
   .msg-row.me .msg-bubble { background: var(--bubble-me); color: white; border-bottom-right-radius: 4px; }
   .msg-row.other .msg-bubble { background: var(--bubble-other); color: var(--text); border-bottom-left-radius: 4px; }
@@ -205,12 +249,14 @@
     color: var(--muted);
     font-size: 0.8rem;
     margin: 0.3rem 0;
+    transition: color 0.3s;
   }
   #input-bar {
     display: flex;
     gap: 0.6rem;
     padding: 1rem;
     border-top: 1px solid var(--border);
+    transition: border-color 0.3s;
   }
   #msg-input {
     flex: 1;
@@ -219,6 +265,9 @@
     border-radius: 20px;
     font-size: 0.95rem;
     outline: none;
+    background: var(--panel);
+    color: var(--text);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
   }
   #send-btn {
     background: var(--accent);
@@ -228,12 +277,14 @@
     border-radius: 20px;
     cursor: pointer;
     font-weight: 600;
+    transition: background-color 0.3s;
   }
   #send-btn:hover { background: var(--accent-dark); }
   #conn-status {
     font-size: 0.75rem;
     color: var(--muted);
     font-weight: normal;
+    transition: color 0.3s;
   }
 </style>
 </head>
@@ -268,6 +319,7 @@
       </ul>
       <h2>Direct message <a id="new-dm-link" style="cursor:pointer;font-weight:600;color:var(--accent);text-transform:none;">+ New</a></h2>
       <ul id="user-list"></ul>
+      <button id="theme-toggle-btn">🌙 Dark mode</button>
       <button id="logout-btn">Log out</button>
     </div>
     <div id="chat-main">
@@ -299,11 +351,30 @@
   const msgInput = document.getElementById('msg-input');
   const sendBtn = document.getElementById('send-btn');
   const logoutBtn = document.getElementById('logout-btn');
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
   const connStatus = document.getElementById('conn-status');
 
   let mode = 'login'; // or 'register'
   let ws = null;
   let myUsername = null;
+  let darkMode = localStorage.getItem('lanchat_darkmode') === 'true';
+
+  // Initialize theme
+  function applyTheme() {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      themeToggleBtn.textContent = '☀️ Light mode';
+    } else {
+      document.documentElement.classList.remove('dark');
+      themeToggleBtn.textContent = '🌙 Dark mode';
+    }
+  }
+
+  themeToggleBtn.addEventListener('click', () => {
+    darkMode = !darkMode;
+    localStorage.setItem('lanchat_darkmode', darkMode);
+    applyTheme();
+  });
 
   function setMode(next) {
     mode = next;
@@ -573,6 +644,7 @@
   // Auto-login if we already have a session token in this tab
   const savedToken = sessionStorage.getItem('lanchat_token');
   const savedUsername = sessionStorage.getItem('lanchat_username');
+  applyTheme();
   if (savedToken && savedUsername) {
     enterChat(savedToken, savedUsername);
   } else {
