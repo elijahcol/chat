@@ -4,7 +4,7 @@
 //  You (the host) are the only one who sets it — friends just
 //  type it in when they sign up, they can't pick their own.
 // ============================================================
-const INVITE_CODE = 'NWCC';
+const INVITE_CODE = 'letmein';
 // ============================================================
 
 const http = require('http');
@@ -147,6 +147,12 @@ const MIME = {
   '.html': 'text/html',
   '.js': 'text/javascript',
   '.css': 'text/css',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.json': 'application/json',
 };
 
 const server = http.createServer(async (req, res) => {
