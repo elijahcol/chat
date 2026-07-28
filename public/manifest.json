@@ -1,0 +1,23 @@
+{
+  "name": "Inbox",
+  "short_name": "Inbox",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#dbe4ff",
+  "theme_color": "#5b52f0",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "447x447",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "447x447",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
