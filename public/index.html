@@ -459,7 +459,6 @@
       </ul>
       <div id="sidebar-header">
         <h2>Direct messages</h2>
-        <button id="new-dm-link" class="btn btn-secondary btn-sm">+ New</button>
       </div>
       <ul id="user-list"></ul>
       <button id="admin-btn" class="btn btn-secondary btn-sm">🔒 Admin</button>
@@ -785,15 +784,6 @@
   }
 
   document.getElementById('public-nav').addEventListener('click', () => switchConversation('public'));
-
-  document.getElementById('new-dm-link').addEventListener('click', () => {
-    const name = prompt('Username to message:');
-    if (!name) return;
-    const trimmed = name.trim();
-    if (!trimmed || trimmed === myUsername) return;
-    knownDmPartners.add(trimmed);
-    switchConversation(trimmed);
-  });
 
   function sendMessage() {
     const text = msgInput.value;
