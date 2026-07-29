@@ -337,9 +337,23 @@
     border-bottom: 1px solid var(--glass-border);
     font-weight: 600;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.5rem;
   }
+  #fav-toggle-btn {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.3rem;
+    line-height: 1;
+    color: var(--muted);
+    display: none;
+    padding: 0;
+    transition: color 0.15s ease, transform 0.1s ease;
+  }
+  #fav-toggle-btn:hover { transform: scale(1.1); }
+  #fav-toggle-btn.is-fav { color: #eab308; }
   #messages {
     flex: 1;
     overflow-y: auto;
@@ -465,7 +479,7 @@
       <button id="logout-btn" class="btn btn-secondary btn-sm">Log out</button>
     </div>
     <div id="chat-main">
-      <div id="chat-header"><span id="chat-header-title">Inbox</span> <span id="conn-status"></span></div>
+      <div id="chat-header"><span id="chat-header-title">Inbox</span> <span id="conn-status"></span><button id="fav-toggle-btn" title="Favorite this person">☆</button></div>
       <div id="messages"></div>
       <div id="input-bar">
         <input id="msg-input" placeholder="Type a message…" autocomplete="off" />
@@ -559,6 +573,7 @@
   const logoutBtn = document.getElementById('logout-btn');
   const adminBtn = document.getElementById('admin-btn');
   const connStatus = document.getElementById('conn-status');
+  const favToggleBtn = document.getElementById('fav-toggle-btn');
 
   let mode = 'login'; // or 'register'
   let ws = null;
@@ -634,6 +649,8 @@
     unread = {};
     iAmAdmin = false;
     adminBtn.textContent = '🔒 Admin';
+    favorites = new Set();
+    favToggleBtn.style.display = 'none';
     updateBadge();
     setMode('login');
   });
@@ -654,6 +671,41 @@
   let knownDmPartners = new Set(); // usernames we have any DM history with
   let unread = {}; // conversation key -> count
   let iAmAdmin = false;
+  let favorites = new Set();
+
+  function favoritesKey(username) {
+    return `lanchat_favorites_${username}`;
+  }
+  function loadFavorites(username) {
+    try {
+      const raw = localStorage.getItem(favoritesKey(username));
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) {
+      return new Set();
+    }
+  }
+  function saveFavorites() {
+    if (!myUsername) return;
+    localStorage.setItem(favoritesKey(myUsername), JSON.stringify([...favorites]));
+  }
+  function toggleFavorite(username) {
+    if (favorites.has(username)) favorites.delete(username);
+    else favorites.add(username);
+    saveFavorites();
+    renderSidebar();
+    updateFavToggleBtn();
+  }
+  function updateFavToggleBtn() {
+    if (currentConversation === 'public') {
+      favToggleBtn.style.display = 'none';
+      return;
+    }
+    favToggleBtn.style.display = 'block';
+    const isFav = favorites.has(currentConversation);
+    favToggleBtn.textContent = isFav ? '★' : '☆';
+    favToggleBtn.classList.toggle('is-fav', isFav);
+    favToggleBtn.title = isFav ? `Unfavorite ${currentConversation}` : `Favorite ${currentConversation}`;
+  }
 
   function conversationKey(msg) {
     // for private messages, the "other person" from my perspective
@@ -741,20 +793,27 @@
     renderSidebar();
     scrollToBottom();
     updateBadge();
+    updateFavToggleBtn();
   }
 
   function renderSidebar() {
     userListEl.innerHTML = '';
     // combine currently-online users and anyone we've DMed before (in case they went offline)
-    const allNames = new Set([...onlineUsers, ...knownDmPartners]);
+    const allNames = [...new Set([...onlineUsers, ...knownDmPartners])].filter((u) => u !== myUsername);
+    // favorites first (alphabetical), then everyone else (alphabetical)
+    allNames.sort((a, b) => {
+      const favA = favorites.has(a) ? 0 : 1;
+      const favB = favorites.has(b) ? 0 : 1;
+      if (favA !== favB) return favA - favB;
+      return a.localeCompare(b);
+    });
     allNames.forEach((u) => {
-      if (u === myUsername) return;
       const li = document.createElement('li');
       li.className = onlineUsers.includes(u) ? '' : 'offline';
       if (u === currentConversation) li.classList.add('active');
 
       const label = document.createElement('span');
-      label.textContent = u;
+      label.textContent = (favorites.has(u) ? '★ ' : '') + u;
       li.appendChild(label);
 
       if (unread[u]) {
@@ -785,6 +844,11 @@
 
   document.getElementById('public-nav').addEventListener('click', () => switchConversation('public'));
 
+  favToggleBtn.addEventListener('click', () => {
+    if (currentConversation === 'public') return;
+    toggleFavorite(currentConversation);
+  });
+
   function sendMessage() {
     const text = msgInput.value;
     if (!text.trim() || !ws || ws.readyState !== WebSocket.OPEN) return;
@@ -803,6 +867,7 @@
 
   function enterChat(token, username) {
     myUsername = username;
+    favorites = loadFavorites(username);
     authScreen.style.display = 'none';
     chatScreen.style.display = 'flex';
     messagesEl.innerHTML = '';
