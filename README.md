@@ -49,6 +49,19 @@ This puts the app on a free hosting service ([Render](https://render.com)) so it
 ## Accounts
 The first time someone uses a username, they "sign up" with a password **and an invite code** right on the login screen — that reserves the name. After that, everyone logs in with just their username + password (no code needed to log in, only to sign up). Passwords are hashed, not stored in plain text, in `users.json`.
 
+### Setting up who can kick people (and delete messages)
+Open `server.js` and find this near the top:
+```js
+const ADMIN_CODE = 'changeme-admin';
+```
+Change it to your own secret code, and only give it out to people you trust with admin powers.
+
+On the chat page, there's a small "🔒 Admin" button at the bottom of the sidebar. Click it, enter your code, and it unlocks:
+- A ✕ button next to anyone online in the sidebar, to remove them from the chat (they can log back in right away — it's a kick, not a ban).
+- A 🗑 button next to every message (hover to see it), to delete that message for everyone, including from the saved history.
+
+This unlock applies to your current browser session — it's not tied to a specific username, so anyone you give the code to can unlock it from whatever account they're logged into.
+
 ### Setting your invite code
 You're the only one who sets the invite code — friends can't pick their own, they just type in whatever code you give them when they sign up.
 

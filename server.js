@@ -4,14 +4,14 @@
 //  You (the host) are the only one who sets it — friends just
 //  type it in when they sign up, they can't pick their own.
 // ============================================================
-const INVITE_CODE = 'NWCC';
+const INVITE_CODE = 'letmein';
 
 //  A separate secret code that unlocks admin powers (the kick
 //  button) right on the webpage — there's a small "Admin" button
 //  in the sidebar that asks for this code. Only you should know
 //  it. Anyone who enters it correctly gets admin powers for that
 //  browser session (it doesn't attach to a specific username).
-const ADMIN_CODE = 'hello2';
+const ADMIN_CODE = 'changeme-admin';
 // ============================================================
 
 const http = require('http');
@@ -324,7 +324,7 @@ wss.on('connection', (ws) => {
       if (!client) return;
       const text = filterProfanity((data.text || '').toString().slice(0, 2000));
       if (!text.trim()) return;
-      const msg = { type: 'message', username: client.username, text, ts: Date.now() };
+      const msg = { id: crypto.randomUUID(), type: 'message', username: client.username, text, ts: Date.now() };
       pushHistory(msg);
       broadcast(msg);
       return;
@@ -344,7 +344,7 @@ wss.on('connection', (ws) => {
         return;
       }
 
-      const msg = { type: 'private', from: client.username, to, text, ts: Date.now() };
+      const msg = { id: crypto.randomUUID(), type: 'private', from: client.username, to, text, ts: Date.now() };
       pushDm(client.username, to, msg);
       sendToUser(client.username, msg); // echo to sender's own session(s)
       sendToUser(to, msg); // deliver to recipient if online
@@ -382,6 +382,35 @@ wss.on('connection', (ws) => {
         const sysMsg = { type: 'system', text: `${target} was removed from the chat by ${client.username}`, ts: Date.now() };
         pushHistory(sysMsg);
         broadcast(sysMsg);
+      }
+      return;
+    }
+
+    if (data.type === 'delete_message') {
+      const client = clients.get(ws);
+      if (!client || !client.isAdminSession) return; // only admins can delete
+      const id = (data.id || '').toString();
+      if (!id) return;
+
+      let deleted = false;
+      const beforeLen = history.length;
+      history = history.filter((m) => m.id !== id);
+      if (history.length !== beforeLen) {
+        deleted = true;
+        saveJson(HISTORY_FILE, history);
+        broadcast({ type: 'message_deleted', id });
+      } else {
+        for (const [key, arr] of dmHistory.entries()) {
+          const filtered = arr.filter((m) => m.id !== id);
+          if (filtered.length !== arr.length) {
+            dmHistory.set(key, filtered);
+            deleted = true;
+            const [a, b] = key.split('|');
+            saveJson(DMS_FILE, Object.fromEntries(dmHistory));
+            sendToUser(a, { type: 'message_deleted', id });
+            sendToUser(b, { type: 'message_deleted', id });
+          }
+        }
       }
       return;
     }

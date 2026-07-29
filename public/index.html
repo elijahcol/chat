@@ -351,7 +351,17 @@
   .msg-row { display: flex; flex-direction: column; max-width: 75%; }
   .msg-row.me { align-self: flex-end; align-items: flex-end; }
   .msg-row.other { align-self: flex-start; align-items: flex-start; }
-  .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem; }
+  .delete-msg-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0;
+    opacity: 0.5;
+    transition: opacity 0.15s ease;
+  }
+  .delete-msg-btn:hover { opacity: 1; }
   .msg-bubble {
     padding: 0.6rem 0.9rem;
     border-radius: 16px;
@@ -666,11 +676,25 @@
     const senderName = msg.type === 'private' ? msg.from : msg.username;
     const row = document.createElement('div');
     row.className = 'msg-row ' + (senderName === myUsername ? 'me' : 'other');
+    if (msg.id) row.dataset.msgId = msg.id;
 
     const meta = document.createElement('div');
     meta.className = 'msg-meta';
     const time = new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     meta.textContent = (senderName === myUsername ? 'You' : senderName) + ' · ' + time;
+
+    if (iAmAdmin && msg.id) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'delete-msg-btn';
+      delBtn.title = 'Delete this message';
+      delBtn.textContent = '🗑';
+      delBtn.addEventListener('click', () => {
+        if (confirm('Delete this message for everyone?')) {
+          ws.send(JSON.stringify({ type: 'delete_message', id: msg.id }));
+        }
+      });
+      meta.appendChild(delBtn);
+    }
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
@@ -843,6 +867,17 @@
         } else {
           alert(data.error || 'Wrong admin code');
         }
+        return;
+      }
+
+      if (data.type === 'message_deleted') {
+        // remove it from every cached conversation so it doesn't reappear on switch
+        Object.values(conversations).forEach((msgs) => {
+          const idx = msgs.findIndex((m) => m.id === data.id);
+          if (idx !== -1) msgs.splice(idx, 1);
+        });
+        const row = messagesEl.querySelector(`[data-msg-id="${CSS.escape(data.id)}"]`);
+        if (row) row.remove();
         return;
       }
 
