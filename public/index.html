@@ -354,14 +354,20 @@
   .msg-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.2rem; display: flex; align-items: center; gap: 0.35rem; }
   .delete-msg-btn {
     border: none;
-    background: transparent;
+    background: rgba(239, 68, 68, 0.12);
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.8rem;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
-    opacity: 0.5;
-    transition: opacity 0.15s ease;
+    opacity: 0.85;
+    transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
   }
-  .delete-msg-btn:hover { opacity: 1; }
+  .delete-msg-btn:hover { opacity: 1; background: rgba(239, 68, 68, 0.35); transform: scale(1.1); }
   .msg-bubble {
     padding: 0.6rem 0.9rem;
     border-radius: 16px;
