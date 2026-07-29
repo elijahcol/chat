@@ -4,14 +4,14 @@
 //  You (the host) are the only one who sets it — friends just
 //  type it in when they sign up, they can't pick their own.
 // ============================================================
-const INVITE_CODE = 'letmein';
+const INVITE_CODE = 'NWCC';
 
 //  A separate secret code that unlocks admin powers (the kick
 //  button) right on the webpage — there's a small "Admin" button
 //  in the sidebar that asks for this code. Only you should know
 //  it. Anyone who enters it correctly gets admin powers for that
 //  browser session (it doesn't attach to a specific username).
-const ADMIN_CODE = 'changeme-admin';
+const ADMIN_CODE = 'PASSWORD!@';
 // ============================================================
 
 const http = require('http');
