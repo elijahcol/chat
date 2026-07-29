@@ -68,7 +68,7 @@
   }
 
   /* ---- Floating background blobs (the "liquid" behind the glass) ---- */
-  #chat-screen, #auth-screen, #theme-toggle { z-index: 1; }
+  #chat-screen, #auth-screen { z-index: 1; }
   .blob {
     position: fixed;
     border-radius: 50%;
@@ -106,24 +106,6 @@
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
   }
-
-  /* ---- Theme toggle ---- */
-  #theme-toggle {
-    position: fixed;
-    top: 22px;
-    right: 22px;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    font-size: 1.15rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20;
-    transition: transform 0.15s ease, background-color 0.2s ease;
-  }
-  #theme-toggle:hover { transform: scale(1.06); }
 
   /* ---- Unified button system ---- */
   .btn {
@@ -440,7 +422,6 @@
   <div class="blob blob-1"></div>
   <div class="blob blob-2"></div>
   <div class="blob blob-3"></div>
-  <button id="theme-toggle" class="glass" title="Toggle dark mode">🌙</button>
 
   <!-- AUTH SCREEN -->
   <div id="auth-screen" class="glass">
@@ -475,6 +456,7 @@
         <h2>Direct messages</h2>
       </div>
       <ul id="user-list"></ul>
+      <button id="theme-toggle" class="btn btn-secondary btn-sm" title="Toggle dark mode">🌙 Dark mode</button>
       <button id="admin-btn" class="btn btn-secondary btn-sm">🔒 Admin</button>
       <button id="logout-btn" class="btn btn-secondary btn-sm">Log out</button>
     </div>
@@ -494,7 +476,7 @@
   const themeToggle = document.getElementById('theme-toggle');
   function applyTheme(dark) {
     document.documentElement.classList.toggle('dark', dark);
-    themeToggle.textContent = dark ? '☀️' : '🌙';
+    themeToggle.textContent = dark ? '☀️ Light mode' : '🌙 Dark mode';
     localStorage.setItem('lanchat_theme', dark ? 'dark' : 'light');
   }
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
